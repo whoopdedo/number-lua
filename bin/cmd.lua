@@ -174,9 +174,6 @@ do
   elseif argv.version then
     print_version(io.stdout)
 
-  elseif argv.interactive then
-    do_repl(io.stdin, io.stdout)
-
   else
     local outfile
     local file,filename
@@ -199,6 +196,10 @@ do
       if outfile == io.stdout then
         outfile:write("\n")
       end
+
+    elseif argv.interactive or not argv[1] then
+      print_version(io.stdout)
+      do_repl(io.stdin, io.stdout)
 
     else
       local script_args = {[0] = filename}
