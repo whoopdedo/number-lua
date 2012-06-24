@@ -1,7 +1,8 @@
 package = "number-lua"
 version = "20120623-1"
 source = {
-  url = "git://github.com/whoopdedo/number-lua.git"
+  url = "git://github.com/whoopdedo/number-lua.git",
+  tag = "release-20120623-1"
 }
 description = {
   summary = "NumberScript for Lua, a small language that compiles to Lua",
