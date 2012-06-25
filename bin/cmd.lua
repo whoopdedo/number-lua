@@ -16,11 +16,21 @@ local function error_handler(message)
   return string.gsub(message, '^([^:]*:%d+: )', '')
 end
 
-local function report(out, status, message)
+local function report_error(out, status, message)
   if not status then
     out:write(message,"\n")
   end
   return status
+end
+
+local function report(out, status, ...)
+  local arg = table.pack(...)
+  for n = 1,arg.n do
+    arg[n] = tostring(arg[n])
+  end
+  if arg.n ~= 0 then
+    out:write(table.concat(arg,"\t"),"\n")
+  end
 end
 
 local function print_version(out)
@@ -55,7 +65,7 @@ local function do_script(file, filename, arg)
   if not code then
     abort(err)
   end
-  return report(io.stdout, pcall(code, table.unpack(arg)))
+  return report_error(io.stdout, pcall(code, table.unpack(arg)))
 end
 
 local function do_compile_decompile(func, file, outfile)
@@ -114,8 +124,13 @@ local function do_repl(console, out)
   local previous = ""
   local input = ""
   local line = 1
+  local echo = false
   repeat
     if input ~= "" then
+      if line == 1 and input:sub(1,1) == '=' then
+        echo = true
+        input = input:sub(2)
+      end
       input = previous .. input
       local code, err = number.compile(input)
       if not code then
@@ -123,20 +138,27 @@ local function do_repl(console, out)
         previous = ""
         prompt = "> "
         line = 1
+        echo = false
       else
-        code = load(code, '=stdin')
-        if not code then
+        if echo then
+          code = 'return '..code
+        end
+        local chunk = load(code, '=stdin')
+        if not chunk and echo then
+          -- try again without the implicit return
+          code = code:sub(8)
+          chunk = load(code, '=stdin')
+        end
+        if not chunk then
           previous = input
           prompt = ">> "
           line = line + 1
         else
-          code, err = pcall(code)
-          if not code then
-            out:write(err,"\n")
-          end
+          report(out, pcall(chunk))
           previous = ""
           prompt = "> "
           line = 1
+          echo = false
         end
       end
     end
